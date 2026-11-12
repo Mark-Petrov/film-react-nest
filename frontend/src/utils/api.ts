@@ -117,9 +117,6 @@ export interface IFilmAPI {
     orderTickets: (order: Order) => Promise<OrderResult[]>;
 }
 
-/**
- * Класс для работы с API фильмов
- */
 export class FilmAPI extends Api implements IFilmAPI {
     readonly cdn: string;
 
@@ -128,10 +125,6 @@ export class FilmAPI extends Api implements IFilmAPI {
         this.cdn = cdn;
     }
 
-    /**
-     * Получить список сеансов фильма
-     * @param id
-     */
     async getFilmSchedule(id: string): Promise<Session[]> {
         const data = await this._get<ApiListResponse<Session>>(
             `/films/${id}/schedule`
@@ -147,9 +140,6 @@ export class FilmAPI extends Api implements IFilmAPI {
         });
     }
 
-    /**
-     * Получить список фильмов
-     */
     async getFilms(): Promise<Movie[]> {
         const data = await this._get<ApiListResponse<Movie>>('/films');
         return data.items.map((item) => ({
@@ -159,13 +149,6 @@ export class FilmAPI extends Api implements IFilmAPI {
         }));
     }
 
-    /**
-     * Забронировать билеты
-     * @param order - данные для бронирования
-     * @param order.tickets - список билетов, для каждого требуются как минимум поля film, session, row, seat
-     * @param order.email - email пользователя
-     * @param order.phone - телефон пользователя
-     */
     async orderTickets(order: Order): Promise<OrderResult[]> {
         const data = await this._post<ApiListResponse<OrderResult>>(
             '/order',

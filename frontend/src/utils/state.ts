@@ -82,11 +82,9 @@ const removeTicket = (state: AppState, key: string): AppState => {
 
 const validateOrder = (state: AppState): AppState => {
     const errors = [];
-    //validate email with regexp
     if (state.contacts.email && !/[^@ \t\r\n]+@[^@ \t\r\n]+\.[^@ \t\r\n]+/.test(state.contacts.email)) {
         errors.push('Некорректный email');
     }
-    //validate phone with regexp
     if (state.contacts.phone && !/\+7\d{10}/.test(state.contacts.phone)) {
         errors.push('Некорректный телефон');
     }
