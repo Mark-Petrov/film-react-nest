@@ -24,13 +24,7 @@ export class OrderService {
   ) {}
 
   async create(dto: CreateOrderDto): Promise<OrderResponseDto> {
-    const tickets = dto?.tickets ?? [];
-    if (tickets.length === 0) {
-      throw new HttpException(
-        { error: 'Билеты не переданы' },
-        HttpStatus.BAD_REQUEST,
-      );
-    }
+    const tickets = dto.tickets;
 
     this.assertUniqueSeats(tickets);
 
@@ -38,6 +32,16 @@ export class OrderService {
     for (const group of groups) {
       await this.assertSeatsAvailable(group);
     }
+
+    const items: OrderTicketDto[] = tickets.map((ticket) => ({
+      id: randomUUID(),
+      film: ticket.film,
+      session: ticket.session,
+      daytime: ticket.daytime,
+      row: ticket.row,
+      seat: ticket.seat,
+      price: ticket.price,
+    }));
 
     const booked: SeatGroup[] = [];
     try {
@@ -55,26 +59,16 @@ export class OrderService {
         }
         booked.push(group);
       }
+
+      await this.filmsRepository.saveOrder({
+        email: dto.email,
+        phone: dto.phone,
+        tickets: items,
+      });
     } catch (error) {
       await this.rollback(booked);
       throw error;
     }
-
-    const items: OrderTicketDto[] = tickets.map((ticket) => ({
-      id: randomUUID(),
-      film: ticket.film,
-      session: ticket.session,
-      daytime: ticket.daytime,
-      row: ticket.row,
-      seat: ticket.seat,
-      price: ticket.price,
-    }));
-
-    await this.filmsRepository.saveOrder({
-      email: dto.email,
-      phone: dto.phone,
-      tickets: items,
-    });
 
     return { total: items.length, items };
   }

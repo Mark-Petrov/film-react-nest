@@ -1,45 +1,102 @@
-import mongoose from 'mongoose';
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 
-const ScheduleSchema = new mongoose.Schema(
-  {
-    id: { type: String, required: true },
-    daytime: { type: String, required: true },
-    hall: { type: Number, required: true },
-    rows: { type: Number, required: true },
-    seats: { type: Number, required: true },
-    price: { type: Number, required: true },
-    taken: { type: [String], default: [] },
-  },
-  { _id: false, id: false },
-);
+@Schema({ _id: false, id: false })
+export class Schedule {
+  @Prop({ required: true })
+  id: string;
 
-const FilmSchema = new mongoose.Schema(
-  {
-    id: { type: String, required: true, index: true },
-    rating: { type: Number, required: true },
-    director: { type: String, required: true },
-    tags: { type: [String], default: [] },
-    title: { type: String, required: true },
-    about: { type: String, required: true },
-    description: { type: String, required: true },
-    image: { type: String, required: true },
-    cover: { type: String, required: true },
-    schedule: { type: [ScheduleSchema], default: [] },
-  },
-  { id: false, versionKey: false },
-);
+  @Prop({ required: true })
+  daytime: string;
 
-const OrderSchema = new mongoose.Schema(
-  {
-    email: { type: String, required: true },
-    phone: { type: String, required: true },
-    tickets: { type: [mongoose.Schema.Types.Mixed], required: true },
-  },
-  { id: false, versionKey: false },
-);
+  @Prop({ required: true })
+  hall: number;
 
-export const FilmModel =
-  mongoose.models.Film || mongoose.model('Film', FilmSchema, 'films');
+  @Prop({ required: true })
+  rows: number;
 
-export const OrderModel =
-  mongoose.models.Order || mongoose.model('Order', OrderSchema, 'orders');
+  @Prop({ required: true })
+  seats: number;
+
+  @Prop({ required: true })
+  price: number;
+
+  @Prop({ type: [String], default: [] })
+  taken: string[];
+}
+
+export const ScheduleSchema = SchemaFactory.createForClass(Schedule);
+
+@Schema({ collection: 'films', versionKey: false, id: false })
+export class Film {
+  @Prop({ required: true, index: true })
+  id: string;
+
+  @Prop({ required: true })
+  rating: number;
+
+  @Prop({ required: true })
+  director: string;
+
+  @Prop({ type: [String], default: [] })
+  tags: string[];
+
+  @Prop({ required: true })
+  title: string;
+
+  @Prop({ required: true })
+  about: string;
+
+  @Prop({ required: true })
+  description: string;
+
+  @Prop({ required: true })
+  image: string;
+
+  @Prop({ required: true })
+  cover: string;
+
+  @Prop({ type: [ScheduleSchema], default: [] })
+  schedule: Schedule[];
+}
+
+export const FilmSchema = SchemaFactory.createForClass(Film);
+
+@Schema({ _id: false, id: false })
+export class OrderTicket {
+  @Prop({ required: true })
+  id: string;
+
+  @Prop({ required: true })
+  film: string;
+
+  @Prop({ required: true })
+  session: string;
+
+  @Prop({ required: true })
+  daytime: string;
+
+  @Prop({ required: true })
+  row: number;
+
+  @Prop({ required: true })
+  seat: number;
+
+  @Prop({ required: true })
+  price: number;
+}
+
+export const OrderTicketSchema = SchemaFactory.createForClass(OrderTicket);
+
+@Schema({ collection: 'orders', versionKey: false, id: false })
+export class Order {
+  @Prop({ required: true })
+  email: string;
+
+  @Prop({ required: true })
+  phone: string;
+
+  @Prop({ type: [OrderTicketSchema], required: true })
+  tickets: OrderTicket[];
+}
+
+export const OrderSchema = SchemaFactory.createForClass(Order);

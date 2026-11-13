@@ -1,9 +1,10 @@
+import { Injectable } from '@nestjs/common';
 import { readFileSync } from 'node:fs';
 import * as path from 'node:path';
 import { FilmEntity, StoredOrder } from './film.entity';
-import { toFilmEntity } from './film.mapper';
 import { FilmsRepository } from './films.repository';
 
+@Injectable()
 export class FilmsMemoryRepository implements FilmsRepository {
   private readonly films: FilmEntity[];
   private readonly orders: StoredOrder[] = [];
@@ -14,11 +15,7 @@ export class FilmsMemoryRepository implements FilmsRepository {
       'test',
       'mongodb_initial_stub.json',
     );
-    const raw = JSON.parse(readFileSync(filePath, 'utf-8')) as Record<
-      string,
-      unknown
-    >[];
-    this.films = raw.map((film) => toFilmEntity(film));
+    this.films = JSON.parse(readFileSync(filePath, 'utf-8')) as FilmEntity[];
   }
 
   async findAll(): Promise<FilmEntity[]> {

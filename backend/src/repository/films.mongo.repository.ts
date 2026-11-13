@@ -1,21 +1,23 @@
+import { Injectable } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 import { FilmEntity, StoredOrder } from './film.entity';
-import { toFilmEntity } from './film.mapper';
 import { FilmsRepository } from './films.repository';
-import { FilmModel, OrderModel } from './schemas/film.schema';
+import { Film, Order } from './schemas/film.schema';
 
+@Injectable()
 export class FilmsMongoRepository implements FilmsRepository {
+  constructor(
+    @InjectModel(Film.name) private readonly filmModel: Model<Film>,
+    @InjectModel(Order.name) private readonly orderModel: Model<Order>,
+  ) {}
+
   async findAll(): Promise<FilmEntity[]> {
-    const films = await FilmModel.find().lean().exec();
-    return films.map((film) =>
-      toFilmEntity(film as unknown as Record<string, unknown>),
-    );
+    return this.filmModel.find().lean().exec();
   }
 
   async findById(id: string): Promise<FilmEntity | null> {
-    const film = await FilmModel.findOne({ id }).lean().exec();
-    return film
-      ? toFilmEntity(film as unknown as Record<string, unknown>)
-      : null;
+    return this.filmModel.findOne({ id }).lean().exec();
   }
 
   async takeSeats(
@@ -23,23 +25,25 @@ export class FilmsMongoRepository implements FilmsRepository {
     sessionId: string,
     places: string[],
   ): Promise<boolean> {
-    const updated = await FilmModel.findOneAndUpdate(
-      {
-        id: filmId,
-        schedule: {
-          $elemMatch: {
-            id: sessionId,
-            taken: { $nin: places },
+    const updated = await this.filmModel
+      .findOneAndUpdate(
+        {
+          id: filmId,
+          schedule: {
+            $elemMatch: {
+              id: sessionId,
+              taken: { $nin: places },
+            },
           },
         },
-      },
-      {
-        $addToSet: {
-          'schedule.$.taken': { $each: places },
+        {
+          $addToSet: {
+            'schedule.$.taken': { $each: places },
+          },
         },
-      },
-      { new: true },
-    ).exec();
+        { new: true },
+      )
+      .exec();
 
     return Boolean(updated);
   }
@@ -49,13 +53,15 @@ export class FilmsMongoRepository implements FilmsRepository {
     sessionId: string,
     places: string[],
   ): Promise<void> {
-    await FilmModel.updateOne(
-      { id: filmId, 'schedule.id': sessionId },
-      { $pull: { 'schedule.$.taken': { $in: places } } },
-    ).exec();
+    await this.filmModel
+      .updateOne(
+        { id: filmId, 'schedule.id': sessionId },
+        { $pull: { 'schedule.$.taken': { $in: places } } },
+      )
+      .exec();
   }
 
   async saveOrder(order: StoredOrder): Promise<void> {
-    await OrderModel.create(order);
+    await this.orderModel.create(order);
   }
 }
