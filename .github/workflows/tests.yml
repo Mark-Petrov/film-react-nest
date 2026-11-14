@@ -25,6 +25,26 @@ jobs:
       run: bash $DIR_TESTS/bin/backend.sh
   test_endpoints:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: films
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d films"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PORT: 3000
+      DATABASE_DRIVER: postgres
+      DATABASE_URL: postgres://localhost:5432/films
+      DATABASE_USERNAME: postgres
+      DATABASE_PASSWORD: postgres
     steps:
     - name: Set up GitHub Actions
       uses: actions/checkout@v4
@@ -35,6 +55,48 @@ jobs:
     - name: Get testing lib
       run: set -eu && git clone --depth 1 $REP_TESTS $DIR_TESTS
     - name: Start project
-      run: bash $DIR_TESTS/bin/start_project.sh
+      working-directory: backend
+      run: |
+        set -eu
+        npm ci
+        node <<'NODE'
+        const fs = require('fs');
+        const { Client } = require('pg');
+
+        function statements(sql) {
+          return sql
+            .split(';')
+            .map((part) => part.trim())
+            .filter((part) => part && !/^create database/i.test(part) && !/^alter table/i.test(part));
+        }
+
+        (async () => {
+          const client = new Client({
+            connectionString: process.env.DATABASE_URL,
+            user: process.env.DATABASE_USERNAME,
+            password: process.env.DATABASE_PASSWORD,
+          });
+          await client.connect();
+          for (const file of ['test/prac.init.sql', 'test/prac.films.sql', 'test/prac.shedules.sql']) {
+            for (const sql of statements(fs.readFileSync(file, 'utf8'))) {
+              await client.query(sql);
+            }
+          }
+          await client.end();
+        })().catch((error) => {
+          console.error(error);
+          process.exit(1);
+        });
+        NODE
+        npm run build
+        npm run start:dev > /tmp/backend.log 2>&1 &
+        for _ in $(seq 1 60); do
+          if curl -sf http://localhost:3000/api/afisha/films >/dev/null; then
+            exit 0
+          fi
+          sleep 2
+        done
+        cat /tmp/backend.log
+        exit 1
     - name: Run tests
       run: bash $DIR_TESTS/bin/endpoints.sh
