@@ -3,52 +3,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { Film } from './entities/film';
 import { Schedule } from './entities/schedule';
-import { FilmEntity, ScheduleEntity, StoredOrder } from './film.entity';
 import { FilmsRepository } from './films.repository';
 
-function parseList(value: string | null | undefined): string[] {
-  if (!value) {
-    return [];
-  }
-  return value
-    .split(',')
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
-
-function toSchedule(schedule: Schedule): ScheduleEntity {
-  return {
-    id: schedule.id,
-    daytime: schedule.daytime,
-    hall: schedule.hall,
-    rows: schedule.rows,
-    seats: schedule.seats,
-    price: schedule.price,
-    taken: parseList(schedule.taken),
-  };
-}
-
-function toFilm(film: Film): FilmEntity {
-  const schedule = [...(film.schedule ?? [])].sort((a, b) =>
-    a.daytime.localeCompare(b.daytime),
-  );
-
-  return {
-    id: film.id,
-    rating: film.rating,
-    director: film.director,
-    tags: parseList(film.tags),
-    title: film.title,
-    about: film.about,
-    description: film.description,
-    image: film.image,
-    cover: film.cover,
-    schedule: schedule.map(toSchedule),
-  };
-}
-
 @Injectable()
-export class FilmsPostgresRepository implements FilmsRepository {
+export class AppRepository implements FilmsRepository {
   constructor(
     @InjectRepository(Film)
     private readonly films: Repository<Film>,
@@ -57,17 +15,20 @@ export class FilmsPostgresRepository implements FilmsRepository {
     private readonly dataSource: DataSource,
   ) {}
 
-  async findAll(): Promise<FilmEntity[]> {
-    const films = await this.films.find();
-    return films.map(toFilm);
+  async findAll(): Promise<Film[]> {
+    return this.films.find();
   }
 
-  async findById(id: string): Promise<FilmEntity | null> {
+  async findById(id: string): Promise<Film | null> {
     const film = await this.films.findOne({
       where: { id },
       relations: { schedule: true },
     });
-    return film ? toFilm(film) : null;
+    if (!film) {
+      return null;
+    }
+    film.schedule.sort((a, b) => a.daytime.localeCompare(b.daytime));
+    return film;
   }
 
   async takeSeats(
@@ -88,12 +49,12 @@ export class FilmsPostgresRepository implements FilmsRepository {
         return false;
       }
 
-      const taken = parseList(schedule.taken);
+      const taken = schedule.taken ?? [];
       if (places.some((place) => taken.includes(place))) {
         return false;
       }
 
-      schedule.taken = [...taken, ...places].join(',');
+      schedule.taken = [...taken, ...places];
       await manager.save(schedule);
       return true;
     });
@@ -118,14 +79,10 @@ export class FilmsPostgresRepository implements FilmsRepository {
       }
 
       const drop = new Set(places);
-      schedule.taken = parseList(schedule.taken)
-        .filter((place) => !drop.has(place))
-        .join(',');
+      schedule.taken = (schedule.taken ?? []).filter(
+        (place) => !drop.has(place),
+      );
       await manager.save(schedule);
     });
-  }
-
-  async saveOrder(order: StoredOrder): Promise<void> {
-    void order;
   }
 }

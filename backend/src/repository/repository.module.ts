@@ -4,7 +4,7 @@ import { AppConfig, CONFIG } from '../app.config.provider';
 import { AppConfigModule } from '../app-config.module';
 import { Film } from './entities/film';
 import { Schedule } from './entities/schedule';
-import { FilmsPostgresRepository } from './films.postgres.repository';
+import { AppRepository } from './app.repository';
 import { FILMS_REPOSITORY } from './films.repository';
 
 @Module({
@@ -14,14 +14,21 @@ import { FILMS_REPOSITORY } from './films.repository';
       imports: [AppConfigModule],
       inject: [CONFIG],
       useFactory: (config: AppConfig) => {
+        if (config.database.driver !== 'postgres') {
+          throw new Error(
+            `Unsupported DATABASE_DRIVER: ${config.database.driver}`,
+          );
+        }
         const url = new URL(config.database.url);
         return {
-          type: 'postgres' as const,
+          type: config.database.driver,
           host: url.hostname,
           port: Number(url.port || 5432),
           database: url.pathname.replace(/^\//, ''),
-          username: config.database.username || decodeURIComponent(url.username),
-          password: config.database.password || decodeURIComponent(url.password),
+          username:
+            config.database.username || decodeURIComponent(url.username),
+          password:
+            config.database.password || decodeURIComponent(url.password),
           autoLoadEntities: true,
           synchronize: false,
         };
@@ -32,7 +39,7 @@ import { FILMS_REPOSITORY } from './films.repository';
   providers: [
     {
       provide: FILMS_REPOSITORY,
-      useClass: FilmsPostgresRepository,
+      useClass: AppRepository,
     },
   ],
   exports: [FILMS_REPOSITORY],

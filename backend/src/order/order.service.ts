@@ -5,6 +5,7 @@ import {
   OrderResponseDto,
   OrderTicketDto,
 } from './dto/order.dto';
+import { Schedule } from '../repository/entities/schedule';
 import {
   FILMS_REPOSITORY,
   FilmsRepository,
@@ -29,8 +30,10 @@ export class OrderService {
     this.assertUniqueSeats(tickets);
 
     const groups = this.groupTickets(tickets);
+    const prices = new Map<string, number>();
     for (const group of groups) {
-      await this.assertSeatsAvailable(group);
+      const session = await this.assertSeatsAvailable(group);
+      prices.set(group.sessionId, session.price);
     }
 
     const items: OrderTicketDto[] = tickets.map((ticket) => ({
@@ -40,7 +43,7 @@ export class OrderService {
       daytime: ticket.daytime,
       row: ticket.row,
       seat: ticket.seat,
-      price: ticket.price,
+      price: prices.get(ticket.session)!,
     }));
 
     const booked: SeatGroup[] = [];
@@ -59,12 +62,6 @@ export class OrderService {
         }
         booked.push(group);
       }
-
-      await this.filmsRepository.saveOrder({
-        email: dto.email,
-        phone: dto.phone,
-        tickets: items,
-      });
     } catch (error) {
       await this.rollback(booked);
       throw error;
@@ -102,7 +99,7 @@ export class OrderService {
     return [...groups.values()];
   }
 
-  private async assertSeatsAvailable(group: SeatGroup) {
+  private async assertSeatsAvailable(group: SeatGroup): Promise<Schedule> {
     const film = await this.filmsRepository.findById(group.filmId);
     if (!film) {
       throw new HttpException(
@@ -136,6 +133,8 @@ export class OrderService {
         );
       }
     }
+
+    return session;
   }
 
   private async rollback(groups: SeatGroup[]) {
