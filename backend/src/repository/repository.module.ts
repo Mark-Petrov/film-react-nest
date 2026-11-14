@@ -1,29 +1,33 @@
 import { Module } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { AppConfig, CONFIG } from '../app.config.provider';
 import { AppConfigModule } from '../app-config.module';
-import { FilmsMemoryRepository } from './films.memory.repository';
-import { FilmsMongoRepository } from './films.mongo.repository';
+import { Film } from './entities/film';
+import { Schedule } from './entities/schedule';
+import { FilmsPostgresRepository } from './films.postgres.repository';
 import { FILMS_REPOSITORY } from './films.repository';
-import { Film, FilmSchema, Order, OrderSchema } from './schemas/film.schema';
-
-const useMongo = process.env.DATABASE_DRIVER === 'mongodb';
 
 @Module({
   imports: [
     AppConfigModule,
-    ...(useMongo
-      ? [
-          MongooseModule.forFeature([
-            { name: Film.name, schema: FilmSchema },
-            { name: Order.name, schema: OrderSchema },
-          ]),
-        ]
-      : []),
+    TypeOrmModule.forRootAsync({
+      imports: [AppConfigModule],
+      inject: [CONFIG],
+      useFactory: (config: AppConfig) => ({
+        type: 'postgres',
+        url: config.database.url,
+        username: config.database.username,
+        password: config.database.password,
+        autoLoadEntities: true,
+        synchronize: false,
+      }),
+    }),
+    TypeOrmModule.forFeature([Film, Schedule]),
   ],
   providers: [
     {
       provide: FILMS_REPOSITORY,
-      useClass: useMongo ? FilmsMongoRepository : FilmsMemoryRepository,
+      useClass: FilmsPostgresRepository,
     },
   ],
   exports: [FILMS_REPOSITORY],
