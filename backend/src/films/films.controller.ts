@@ -1,6 +1,22 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  HttpException,
+  HttpStatus,
+  Param,
+  ParseUUIDPipe,
+} from '@nestjs/common';
 import { GetFilmsDto, GetScheduleDto } from './dto/films.dto';
 import { FilmsService } from './films.service';
+
+const filmIdPipe = new ParseUUIDPipe({
+  version: '4',
+  exceptionFactory: () =>
+    new HttpException(
+      { error: 'Некорректный идентификатор' },
+      HttpStatus.BAD_REQUEST,
+    ),
+});
 
 @Controller('films')
 export class FilmsController {
@@ -12,7 +28,7 @@ export class FilmsController {
   }
 
   @Get(':id/schedule')
-  getSchedule(@Param('id') id: string): Promise<GetScheduleDto> {
+  getSchedule(@Param('id', filmIdPipe) id: string): Promise<GetScheduleDto> {
     return this.filmsService.findSchedule(id);
   }
 }

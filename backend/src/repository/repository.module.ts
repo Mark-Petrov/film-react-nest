@@ -1,29 +1,45 @@
 import { Module } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { AppConfig, CONFIG } from '../app.config.provider';
 import { AppConfigModule } from '../app-config.module';
-import { FilmsMemoryRepository } from './films.memory.repository';
-import { FilmsMongoRepository } from './films.mongo.repository';
+import { Film } from './entities/film';
+import { Schedule } from './entities/schedule';
+import { AppRepository } from './app.repository';
 import { FILMS_REPOSITORY } from './films.repository';
-import { Film, FilmSchema, Order, OrderSchema } from './schemas/film.schema';
-
-const useMongo = process.env.DATABASE_DRIVER === 'mongodb';
 
 @Module({
   imports: [
     AppConfigModule,
-    ...(useMongo
-      ? [
-          MongooseModule.forFeature([
-            { name: Film.name, schema: FilmSchema },
-            { name: Order.name, schema: OrderSchema },
-          ]),
-        ]
-      : []),
+    TypeOrmModule.forRootAsync({
+      imports: [AppConfigModule],
+      inject: [CONFIG],
+      useFactory: (config: AppConfig) => {
+        if (config.database.driver !== 'postgres') {
+          throw new Error(
+            `Unsupported DATABASE_DRIVER: ${config.database.driver}`,
+          );
+        }
+        const url = new URL(config.database.url);
+        return {
+          type: config.database.driver,
+          host: url.hostname,
+          port: Number(url.port || 5432),
+          database: url.pathname.replace(/^\//, ''),
+          username:
+            config.database.username || decodeURIComponent(url.username),
+          password:
+            config.database.password || decodeURIComponent(url.password),
+          autoLoadEntities: true,
+          synchronize: false,
+        };
+      },
+    }),
+    TypeOrmModule.forFeature([Film, Schedule]),
   ],
   providers: [
     {
       provide: FILMS_REPOSITORY,
-      useClass: useMongo ? FilmsMongoRepository : FilmsMemoryRepository,
+      useClass: AppRepository,
     },
   ],
   exports: [FILMS_REPOSITORY],

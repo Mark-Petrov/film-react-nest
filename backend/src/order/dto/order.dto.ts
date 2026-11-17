@@ -7,17 +7,16 @@ import {
   IsNotEmpty,
   IsNumber,
   IsString,
+  IsUUID,
   Min,
   ValidateNested,
 } from 'class-validator';
 
 export class TicketDto {
-  @IsString()
-  @IsNotEmpty()
+  @IsUUID('4')
   film: string;
 
-  @IsString()
-  @IsNotEmpty()
+  @IsUUID('4')
   session: string;
 
   @IsString()
