@@ -3,6 +3,7 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationError } from 'class-validator';
 import { AppConfig, CONFIG } from './app.config.provider';
 import { AppModule } from './app.module';
+import { createLogger } from './logger/create-logger';
 
 function validationMessage(errors: ValidationError[]): string {
   return errors
@@ -15,8 +16,11 @@ function validationMessage(errors: ValidationError[]): string {
 }
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    bufferLogs: true,
+  });
   const config = app.get<AppConfig>(CONFIG);
+  app.useLogger(createLogger());
   app.setGlobalPrefix('api/afisha');
   app.enableCors();
   app.useGlobalPipes(
