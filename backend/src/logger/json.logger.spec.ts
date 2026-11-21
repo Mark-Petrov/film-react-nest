@@ -1,13 +1,13 @@
 import { JsonLogger } from './json.logger';
 
-describe('JsonLogger', () => {
+describe('JsonLogger форматирует запись и пишет её в консоль', () => {
   const logger = new JsonLogger();
 
   afterEach(() => {
     jest.restoreAllMocks();
   });
 
-  it('formats a record as json', () => {
+  it('собирает level, message и optionalParams в JSON', () => {
     expect(logger.formatMessage('log', 'started', ['App'])).toBe(
       JSON.stringify({
         level: 'log',
@@ -17,7 +17,7 @@ describe('JsonLogger', () => {
     );
   });
 
-  it('writes log records to stdout', () => {
+  it('log пишет JSON в console.log', () => {
     const spy = jest.spyOn(console, 'log').mockImplementation(() => undefined);
     logger.log('hello', 'Films');
     expect(spy).toHaveBeenCalledWith(
@@ -25,7 +25,7 @@ describe('JsonLogger', () => {
     );
   });
 
-  it('writes errors to stderr', () => {
+  it('error пишет JSON в console.error', () => {
     const spy = jest
       .spyOn(console, 'error')
       .mockImplementation(() => undefined);

@@ -14,46 +14,46 @@ import {
 
 export class TicketDto {
   @IsUUID('4')
-  film: string;
+  film!: string;
 
   @IsUUID('4')
-  session: string;
+  session!: string;
 
   @IsString()
-  daytime: string;
+  daytime!: string;
 
   @IsInt()
   @Min(1)
-  row: number;
+  row!: number;
 
   @IsInt()
   @Min(1)
-  seat: number;
+  seat!: number;
 
   @IsNumber()
-  price: number;
+  price!: number;
 }
 
 export class CreateOrderDto {
   @IsEmail()
-  email: string;
+  email!: string;
 
   @IsString()
   @IsNotEmpty()
-  phone: string;
+  phone!: string;
 
   @IsArray()
   @ArrayNotEmpty()
   @ValidateNested({ each: true })
   @Type(() => TicketDto)
-  tickets: TicketDto[];
+  tickets!: TicketDto[];
 }
 
 export class OrderTicketDto extends TicketDto {
-  id: string;
+  id!: string;
 }
 
 export class OrderResponseDto {
-  total: number;
-  items: OrderTicketDto[];
+  total!: number;
+  items!: OrderTicketDto[];
 }

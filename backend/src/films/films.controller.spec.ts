@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { FilmsController } from './films.controller';
 import { FilmsService } from './films.service';
 
-describe('FilmsController', () => {
+describe('FilmsController отдаёт фильмы и расписание из сервиса', () => {
   let controller: FilmsController;
   const filmsService = {
     findAll: jest.fn(),
@@ -19,7 +19,7 @@ describe('FilmsController', () => {
     jest.clearAllMocks();
   });
 
-  it('returns the film list from the service', async () => {
+  it('getFilms возвращает список, который собрал FilmsService', async () => {
     const films = { total: 1, items: [{ id: 'film-1', title: 'Фильм' }] };
     filmsService.findAll.mockResolvedValue(films);
 
@@ -27,7 +27,7 @@ describe('FilmsController', () => {
     expect(filmsService.findAll).toHaveBeenCalledTimes(1);
   });
 
-  it('returns a schedule for the given film id', async () => {
+  it('getSchedule возвращает расписание этого фильма', async () => {
     const schedule = { total: 0, items: [] };
     filmsService.findSchedule.mockResolvedValue(schedule);
 

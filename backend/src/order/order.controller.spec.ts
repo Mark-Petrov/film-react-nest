@@ -3,7 +3,7 @@ import { OrderController } from './order.controller';
 import { OrderService } from './order.service';
 import { CreateOrderDto } from './dto/order.dto';
 
-describe('OrderController', () => {
+describe('OrderController передаёт заказ в OrderService', () => {
   let controller: OrderController;
   const orderService = {
     create: jest.fn(),
@@ -19,7 +19,7 @@ describe('OrderController', () => {
     jest.clearAllMocks();
   });
 
-  it('passes the order to the service', async () => {
+  it('create вызывает сервис с тем же dto и возвращает его ответ', async () => {
     const dto = {
       email: 'a@b.co',
       phone: '+79990000000',

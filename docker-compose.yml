@@ -11,13 +11,8 @@ services:
     build:
       context: ./backend
     image: ghcr.io/mark-petrov/film-backend:latest
-    environment:
-      PORT: 3000
-      LOGGER: json
-      DATABASE_DRIVER: postgres
-      DATABASE_URL: postgres://postgres:5432/films
-      DATABASE_USERNAME: postgres
-      DATABASE_PASSWORD: postgres
+    env_file:
+      - .env
     depends_on:
       postgres:
         condition: service_healthy
@@ -40,10 +35,8 @@ services:
 
   postgres:
     image: postgres:16
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: films
+    env_file:
+      - .env
     volumes:
       - pg-data:/var/lib/postgresql/data
     healthcheck:
@@ -55,11 +48,10 @@ services:
 
   pgadmin:
     image: dpage/pgadmin4
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@admin.com
-      PGADMIN_DEFAULT_PASSWORD: admin
+    env_file:
+      - .env
     ports:
-      - "8080:80"
+      - "${PGADMIN_PORT:-127.0.0.1:8080}:80"
     volumes:
       - pgadmin-data:/var/lib/pgadmin
     depends_on:

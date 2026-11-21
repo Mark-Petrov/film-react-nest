@@ -1,25 +1,25 @@
 import { TskvLogger } from './tskv.logger';
 
-describe('TskvLogger', () => {
+describe('TskvLogger форматирует TSKV и пишет запись в stdout', () => {
   const logger = new TskvLogger();
 
   afterEach(() => {
     jest.restoreAllMocks();
   });
 
-  it('formats a flat tab-separated record', () => {
+  it('склеивает поля через таб и добавляет перевод строки', () => {
     expect(logger.formatMessage('log', 'started', ['App'])).toBe(
       'level=log\tmessage=started\tparam0=App\n',
     );
   });
 
-  it('escapes tabs and line breaks inside values', () => {
+  it('экранирует таб и перевод строки внутри значений', () => {
     expect(logger.formatMessage('warn', 'a\tb\nc')).toBe(
       'level=warn\tmessage=a\\tb\\nc\n',
     );
   });
 
-  it('writes the record to stdout', () => {
+  it('log пишет строку TSKV в stdout', () => {
     const spy = jest
       .spyOn(process.stdout, 'write')
       .mockImplementation(() => true);
