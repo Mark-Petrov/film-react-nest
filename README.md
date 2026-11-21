@@ -2,11 +2,11 @@
 
 ## Установка
 
-### MongoDB
+### PostgreSQL
 
-Установите MongoDB скачав дистрибутив с официального сайта или с помощью пакетного менеджера вашей ОС. Также можно воспользоваться Docker (см. ветку `feat/docker`.
+Поставьте PostgreSQL или поднимите контейнеры: скопируйте `.env.example` в `.env` и выполните `docker compose up`. База `films`, пользователь `postgres`.
 
-Выполните скрипт `test/mongodb_initial_stub.js` в консоли `mongo`.
+Таблицы и данные: `backend/test/prac.init.sql`, потом `prac.films.sql` и `prac.shedules.sql`. Из init не выполняйте `create database prac` и `owner to prac`.
 
 ### Бэкенд
 
@@ -20,10 +20,11 @@
 
 Создайте `.env` файл из примера `.env.example`, в нём укажите:
 
-* `DATABASE_DRIVER` - тип драйвера СУБД - в нашем случае это `mongodb` 
-* `DATABASE_URL` - адрес СУБД MongoDB, например `mongodb://127.0.0.1:27017/practicum`.  
+* `DATABASE_DRIVER` — `postgres`
+* `DATABASE_URL` — `postgres://localhost:5432/films`
+* `DATABASE_USERNAME` и `DATABASE_PASSWORD`
 
-MongoDB должна быть установлена и запущена.
+PostgreSQL должна быть запущена.
 
 Запустите бэкенд:
 
@@ -31,6 +32,6 @@ MongoDB должна быть установлена и запущена.
 
 Для проверки отправьте тестовый запрос с помощью Postman или `curl`.
 
+## Сайт
 
-
-
+[http://filmoteka.ddns.net](http://filmoteka.ddns.net)

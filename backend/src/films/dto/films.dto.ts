@@ -6,11 +6,11 @@ export type ScheduleDto = Omit<Schedule, 'film'>;
 export type FilmDto = Omit<Film, 'schedule'>;
 
 export class GetFilmsDto {
-  total: number;
-  items: FilmDto[];
+  total!: number;
+  items!: FilmDto[];
 }
 
 export class GetScheduleDto {
-  total: number;
-  items: ScheduleDto[];
+  total!: number;
+  items!: ScheduleDto[];
 }

@@ -1,15 +1,65 @@
 services:
-  pg:
+  frontend:
+    build:
+      context: ./frontend
+    image: ghcr.io/mark-petrov/film-frontend:latest
+    volumes:
+      - frontend_dist:/output
+    restart: "no"
+
+  backend:
+    build:
+      context: ./backend
+    image: ghcr.io/mark-petrov/film-backend:latest
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  nginx:
+    build:
+      context: ./nginx
+    image: ghcr.io/mark-petrov/film-nginx:latest
+    ports:
+      - "80:80"
+    volumes:
+      - frontend_dist:/usr/share/nginx/html:ro
+    depends_on:
+      frontend:
+        condition: service_completed_successfully
+      backend:
+        condition: service_started
+    restart: unless-stopped
+
+  postgres:
     image: postgres:16
-    container_name: postgres_container
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: films
+    env_file:
+      - .env
     volumes:
       - pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d films"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  pgadmin:
+    image: dpage/pgadmin4
+    env_file:
+      - .env
     ports:
-      - "5432:5432"
+      - "${PGADMIN_PORT:-127.0.0.1:8080}:80"
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
 
 volumes:
+  frontend_dist:
   pg-data:
+  pgadmin-data:
